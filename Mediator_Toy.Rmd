@@ -1,0 +1,58 @@
+---
+title: "Mediator_Toy"
+author: "Pin"
+date: "2025-12-30"
+output: html_document
+---
+
+```{r}
+library(mediation)
+library(sandwich)
+library(dplyr)
+library(readxl)
+library(stargazer)
+library(psych)
+
+Toy <- read_excel("LDL_Toy_Data.xlsx", sheet = "INSTANCE1")
+head(Toy)
+```
+
+```{r}
+Toy <- Toy %>%
+  mutate(DM = as.logical(cut(GLU,
+                  breaks = c(0,100,500),
+                  labels = c("FALSE","TRUE"))),
+         HPL = as.logical(cut(LDL,
+                   breaks = c(0,110,500),
+                   labels = c("FALSE","TRUE"))),
+         HTN = as.logical(cut(BP,
+                   breaks = c(0,140,500),
+                   labels = c("FALSE","TRUE"))),
+         StatY = Age - 25)
+Toy$StatY[Toy$StatY<0] <- 0
+Toy$StatY[Toy$Statin==FALSE] <- 0
+head(Toy)
+```
+
+```{r}
+crude = glm(DM ~ Statin + GeneA , data = Toy, family = "binomial")
+summary(crude)
+```
+
+```{r}
+med = glm(HPL ~ Statin + GeneA, data = Toy, family = "binomial")
+summary(med)
+```
+
+```{r}
+add = glm(DM ~ HPL + Statin + GeneA, data = Toy, family = "binomial")
+summary(add)
+```
+
+```{r}
+fitMed <- mediation::mediate(med, add, treat = "Statin", mediator = "HPL")
+summary(fitMed)
+```
+```{r}
+plot(fitMed)
+```
