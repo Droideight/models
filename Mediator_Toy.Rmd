@@ -5,54 +5,58 @@ date: "2025-12-30"
 output: html_document
 ---
 
-```{r}
+```{r, include=FALSE}
 library(mediation)
 library(sandwich)
 library(dplyr)
 library(readxl)
 library(stargazer)
 library(psych)
-
-Toy <- read_excel("LDL_Toy_Data.xlsx", sheet = "INSTANCE1")
-head(Toy)
+library(CMAverse)
 ```
 
-```{r}
+```{r Read Data}
+Toy <- read_excel("LDL_Toy_Data.xlsx", sheet = "INSTANCE1")
 Toy <- Toy %>%
-  mutate(DM = as.logical(cut(GLU,
+  mutate(DM = as.factor(cut(GLU,
                   breaks = c(0,100,500),
                   labels = c("FALSE","TRUE"))),
-         HPL = as.logical(cut(LDL,
+         HPL = as.factor(cut(LDL,
                    breaks = c(0,110,500),
                    labels = c("FALSE","TRUE"))),
-         HTN = as.logical(cut(BP,
+         HTN = as.factor(cut(BP,
                    breaks = c(0,140,500),
                    labels = c("FALSE","TRUE"))),
+         Statin = as.factor(Statin),
+         Dog = as.factor(Dog),
+         GeneS = as.factor(GeneS),
+         GeneA = as.factor(GeneA),
+         
          StatY = Age - 25)
 Toy$StatY[Toy$StatY<0] <- 0
 Toy$StatY[Toy$Statin==FALSE] <- 0
 head(Toy)
 ```
 
-```{r}
-crude = glm(DM ~ Statin + GeneA , data = Toy, family = "binomial")
-summary(crude)
+```{r Fit Models}
+med = lm(LDL ~ Statin + BMI + Dog, data = Toy)
+add = glm(DM ~ LDL + Statin + Statin * LDL + BMI + Dog, data = Toy, family = "binomial")
 ```
 
-```{r}
-med = glm(HPL ~ Statin + GeneA, data = Toy, family = "binomial")
-summary(med)
-```
-
-```{r}
-add = glm(DM ~ HPL + Statin + GeneA, data = Toy, family = "binomial")
-summary(add)
-```
-
-```{r}
-fitMed <- mediation::mediate(med, add, treat = "Statin", mediator = "HPL")
+```{r Fit Mediation}
+fitMed <- mediation::mediate(med, add, treat = "Statin", mediator = "LDL")
 summary(fitMed)
 ```
-```{r}
+
+```{r Plot Mediation}
 plot(fitMed)
 ```
+
+```{r, include=FALSE}
+est <- cmest(data = Toy, model = "rb", outcome = "DM", exposure = "Statin", mediator = c("LDL"), basec = c("BMI","Dog"), EMint = TRUE, mreg = list("linear"), yreg = "logistic", astar = "FALSE", a = "TRUE", mval = list(1), estimation = "imputation", inference = "bootstrap", nboot = 1000)
+```
+
+```{r Plot New Mediation}
+summary(est)
+```
+
