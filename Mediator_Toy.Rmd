@@ -13,6 +13,8 @@ library(readxl)
 library(stargazer)
 library(psych)
 library(CMAverse)
+knitr::opts_chunk$set(warning = FALSE)
+```
 ```
 
 ```{r Read Data}
@@ -56,7 +58,10 @@ plot(fitMed)
 est <- cmest(data = Toy, model = "rb", outcome = "DM", exposure = "Statin", mediator = c("LDL"), basec = c("BMI","Dog"), EMint = TRUE, mreg = list("linear"), yreg = "logistic", astar = "FALSE", a = "TRUE", mval = list(1), estimation = "imputation", inference = "bootstrap", nboot = 1000)
 ```
 
-```{r Plot New Mediation}
+```{r Plot New Mediation, echo=FALSE}
 summary(est)
+ggcmest(est) + 
+  ggplot2::scale_y_log10() +
+  ggplot2::theme(axis.text.x = ggplot2 ::element_text(angle = 30, vjust = 0.8)) 
 ```
 
